@@ -18,8 +18,18 @@ import AboutPage from './pages/AboutPage'
 import ProgramsPage from './pages/ProgramsPage'
 import FaqPage from './pages/FaqPage'
 import ContactPage from './pages/ContactPage'
+import { QRCodeSVG } from 'qrcode.react'
 
 const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER || '918638854236').replace(/\D/g, '')
+
+const UPI_ID = import.meta.env.VITE_UPI_ID || ''
+const UPI_NAME = import.meta.env.VITE_UPI_NAME || 'Ruyah Institute of Excellence'
+const BANK = {
+  holder: import.meta.env.VITE_BANK_HOLDER || '',
+  bankName: import.meta.env.VITE_BANK_NAME || '',
+  account: import.meta.env.VITE_BANK_ACCOUNT || '',
+  ifsc: import.meta.env.VITE_BANK_IFSC || ''
+}
 
 const studentReviews = [
   { avatar: 'AK', name: 'Amina K.', role: 'Arabic learner', quote: 'The lessons made Arabic feel approachable and practical. I now feel much more confident reading and speaking in everyday situations.' },
@@ -293,6 +303,7 @@ function CourseCard({ course }) {
   </article>
 }
 
+
 function CoursesPage() {
   return <main className="courses-page">
     <section className="courses-page-hero pattern-dark">
@@ -315,6 +326,56 @@ function CoursesPage() {
   </main>
 }
 
+function PaymentOptions({ course }) {
+  const [levelIndex, setLevelIndex] = useState(0)
+  const [plan, setPlan] = useState(null)
+  const [copied, setCopied] = useState('')
+  if (!course.levels) return null
+  const level = course.levels[levelIndex]
+  const amountText = plan ? `₹${plan.amount.toLocaleString('en-IN')}` : ''
+  const note = plan ? `${course.title} ${level.name} - ${plan.label}` : ''
+  const upiLink = plan ? `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${plan.amount}&cu=INR&tn=${encodeURIComponent(note)}` : ''
+  const copyText = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      setTimeout(() => setCopied(''), 2000)
+    } catch { setCopied('') }
+  }
+
+  return <section className="section payment-section">
+    <span className="pill">Fees &amp; Payment</span>
+    <h2>Choose your payment option</h2>
+    {course.levels.length > 1 && <div className="level-tabs">
+      {course.levels.map((l, i) => <button key={l.name} type="button" className={i === levelIndex ? 'active' : ''} onClick={() => { setLevelIndex(i); setPlan(null) }}>{l.name} · {l.duration}</button>)}
+    </div>}
+    {level.requires && <p className="payment-note">Students must complete the {level.requires} level before enrolling in {level.name}.</p>}
+    <div className="plan-buttons">
+      {level.plans.map(p => <button key={p.label} type="button" className={plan === p ? 'active' : ''} onClick={() => setPlan(p)}>{p.label} — ₹{p.amount.toLocaleString('en-IN')}</button>)}
+    </div>
+    {plan && (UPI_ID
+      ? <div className="qr-box">
+          <QRCodeSVG value={upiLink} size={220} />
+          <p>Scan with any UPI app to pay <b>{amountText}</b></p>
+          <div className="pay-details">
+            <p>UPI ID: <b>{UPI_ID}</b> <button type="button" className="copy-btn" onClick={() => copyText('upi', UPI_ID)}>{copied === 'upi' ? 'Copied!' : 'Copy'}</button></p>
+            {BANK.account && <div className="bank-details">
+              <h4>Or pay by bank transfer</h4>
+              <p>Account name: <b>{BANK.holder}</b></p>
+              <p>Bank: <b>{BANK.bankName}</b></p>
+              <p>Account number: <b>{BANK.account}</b> <button type="button" className="copy-btn" onClick={() => copyText('acc', BANK.account)}>{copied === 'acc' ? 'Copied!' : 'Copy'}</button></p>
+              <p>IFSC: <b>{BANK.ifsc}</b> <button type="button" className="copy-btn" onClick={() => copyText('ifsc', BANK.ifsc)}>{copied === 'ifsc' ? 'Copied!' : 'Copy'}</button></p>
+              <p>Amount to pay: <b>{amountText}</b></p>
+            </div>}
+          </div>
+          <p className="payment-note">After paying, send your transaction ID to the institute on WhatsApp so your payment can be confirmed.</p>
+          <a className="button dark" href={whatsappUrl(`Assalamu alaikum, I have paid ${amountText} for ${note}. Transaction ID: `)} target="_blank" rel="noreferrer">Send payment confirmation</a>
+        </div>
+      : <p className="payment-note">Online payment is not set up yet. Please contact the institute on WhatsApp.</p>)}
+  </section>
+}
+
+
 function CoursePage({ course }) {
   if (!course) return <NotFound />
   return <main>
@@ -333,6 +394,7 @@ function CoursePage({ course }) {
       <article><span className="pill">What You Will Learn</span><h2>Clear, practical outcomes</h2><ul>{course.outcomes.map(x => <li key={x}>✦ {x}</li>)}</ul></article>
       <article className="module-card"><span className="pill light">Course Plan</span><ol>{course.modules.map((x, i) => <li key={x}><b>{String(i + 1).padStart(2, '0')}</b><span>{x}</span></li>)}</ol></article>
     </section>
+    <PaymentOptions course={course} />
     <section className="section detail-cta"><h2>Ready to begin?</h2><p>Complete the participant form and continue the conversation with our team on WhatsApp.</p><button className="button dark" onClick={() => go(`/enroll?course=${course.id}`)}>Enroll now</button></section>
   </main>
 }
