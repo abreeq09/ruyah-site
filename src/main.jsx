@@ -33,7 +33,7 @@ const courses = [
     eyebrow: 'Language Foundation',
     title: 'Arabic Language',
     short: 'Build vocabulary, understand sentence structure and communicate with confidence.',
-    price: 'From £25/month',
+    price: 'Fee on request',
     duration: '12 weeks',
     level: 'Beginner friendly',
     age: 'Ages 6+',
@@ -46,20 +46,51 @@ const courses = [
     eyebrow: 'Confidence Through Conversation',
     title: 'Spoken English',
     short: 'Develop natural conversation, pronunciation and practical English for study and work.',
-    price: 'From £25/month',
-    duration: '10 weeks',
-    level: 'All levels',
+    price: 'From ₹1,000 / 2 months',
+    duration: '8 months (4 Beginner + 4 Advanced)',
+    level: 'Beginner & Advanced',
     age: 'Ages 8+',
     icon: 'Aa',
     outcomes: ['Speak more clearly and confidently', 'Improve vocabulary and pronunciation', 'Practise real-life conversations', 'Strengthen listening and presentation skills'],
-    modules: ['Confidence and introductions', 'Everyday conversations', 'Pronunciation clinic', 'Presentations and interviews']
+    modules: ['Confidence and introductions', 'Everyday conversations', 'Pronunciation clinic', 'Presentations and interviews'],
+    levels: [
+      { name: 'Beginner', duration: '4 months', plans: [
+        { label: '2-month payment', months: 2, amount: 1000 },
+        { label: '4-month payment', months: 4, amount: 2000 }
+      ] },
+      { name: 'Advanced', duration: '4 months', requires: 'Beginner', plans: [
+        { label: '2-month payment', months: 2, amount: 2000 },
+        { label: '4-month payment', months: 4, amount: 4000 }
+      ] }
+    ]
   },
+  {
+  id: 'quran-tajweed',
+  eyebrow: 'Qur’an Foundation',
+  title: 'Qur’an Reading & Tajweed',
+  short: 'Learn to read the Holy Qur’an correctly with Tajweed, clear pronunciation and proper Makhraj.',
+  price: '₹600 / month',
+  duration: 'As per course curriculum',
+  level: 'Beginner',
+  age: 'All ages',
+  icon: 'ق',
+  outcomes: ['Read the Holy Qur’an correctly (Nazirah)', 'Understand the basics of Qur’anic Arabic', 'Learn the essential rules of Tajweed', 'Pronounce words accurately with correct Makhraj', 'Memorise selected Surahs'],
+  modules: ['Nazirah Qur’an', 'Basic Qur’anic Arabic', 'Tajweed rules', 'Pronunciation and Makhraj', 'Memorisation of selected Surahs'],
+  levels: [
+    { name: 'Beginner', duration: 'Monthly', plans: [
+      { label: 'Monthly fee', months: 1, amount: 600 }
+    ] }
+  ]
+  },
+
+
+
   {
     id: 'python-ai-tools',
     eyebrow: 'Future-ready Digital Skills',
     title: 'Python + AI Tools',
     short: 'Learn coding fundamentals, problem solving and responsible ways to use modern AI tools.',
-    price: 'From £25/month',
+    price: 'Fee on request',
     duration: '12 weeks',
     level: 'No coding required',
     age: 'Ages 10+',
@@ -76,7 +107,7 @@ const navItems = [
 const faqs = [
   ['Who can join Ruyah courses?', 'Our current courses are designed for learners aged 6 and above. The suitable starting level depends on the chosen course, and our team can help you select the right option.'],
   ['Can I request a demo class?', 'Yes. Select your preferred course on the enrollment form and choose the demo-class option. Our team will share available timings through WhatsApp.'],
-  ['How much do the courses cost?', 'Courses currently start from £25 per month. The final fee can vary by course, learning format and schedule, and will be confirmed before enrollment.'],
+  ['How much do the courses cost?', 'Spoken English starts from ₹1,000 for 2 months, and Quran Reading & Tajweed is ₹600 per month. Fees for our other courses are confirmed by the Ruyah team before enrollment.'],
   ['Are classes live or self-paced?', 'Self-paced learning and live online session options are available. You can choose your preference in the participant form or ask our team for guidance.'],
   ['Will participants receive a certificate?', 'A certificate is included after the participant completes the required lessons, activities and course expectations.'],
   ['How does enrollment work?', 'Choose a course, complete the participant form, and continue to WhatsApp. Your information is prepared as a message so the Ruyah team can confirm the next steps.']
