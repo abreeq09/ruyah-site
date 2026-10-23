@@ -18,8 +18,18 @@ import AboutPage from './pages/AboutPage'
 import ProgramsPage from './pages/ProgramsPage'
 import FaqPage from './pages/FaqPage'
 import ContactPage from './pages/ContactPage'
+import { QRCodeSVG } from 'qrcode.react'
 
 const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER || '918638854236').replace(/\D/g, '')
+
+const UPI_ID = import.meta.env.VITE_UPI_ID || ''
+const UPI_NAME = import.meta.env.VITE_UPI_NAME || 'Ruyah Institute of Excellence'
+const BANK = {
+  holder: import.meta.env.VITE_BANK_HOLDER || '',
+  bankName: import.meta.env.VITE_BANK_NAME || '',
+  account: import.meta.env.VITE_BANK_ACCOUNT || '',
+  ifsc: import.meta.env.VITE_BANK_IFSC || ''
+}
 
 const studentReviews = [
   { avatar: 'AK', name: 'Amina K.', role: 'Arabic learner', quote: 'The lessons made Arabic feel approachable and practical. I now feel much more confident reading and speaking in everyday situations.' },
@@ -33,7 +43,7 @@ const courses = [
     eyebrow: 'Language Foundation',
     title: 'Arabic Language',
     short: 'Build vocabulary, understand sentence structure and communicate with confidence.',
-    price: 'From £25/month',
+    price: 'Fee on request',
     duration: '12 weeks',
     level: 'Beginner friendly',
     age: 'Ages 6+',
@@ -46,20 +56,51 @@ const courses = [
     eyebrow: 'Confidence Through Conversation',
     title: 'Spoken English',
     short: 'Develop natural conversation, pronunciation and practical English for study and work.',
-    price: 'From £25/month',
-    duration: '10 weeks',
-    level: 'All levels',
+    price: 'From ₹1,000 / 2 months',
+    duration: '8 months (4 Beginner + 4 Advanced)',
+    level: 'Beginner & Advanced',
     age: 'Ages 8+',
     icon: 'Aa',
     outcomes: ['Speak more clearly and confidently', 'Improve vocabulary and pronunciation', 'Practise real-life conversations', 'Strengthen listening and presentation skills'],
-    modules: ['Confidence and introductions', 'Everyday conversations', 'Pronunciation clinic', 'Presentations and interviews']
+    modules: ['Confidence and introductions', 'Everyday conversations', 'Pronunciation clinic', 'Presentations and interviews'],
+    levels: [
+      { name: 'Beginner', duration: '4 months', plans: [
+        { label: '2-month payment', months: 2, amount: 1000 },
+        { label: '4-month payment', months: 4, amount: 2000 }
+      ] },
+      { name: 'Advanced', duration: '4 months', requires: 'Beginner', plans: [
+        { label: '2-month payment', months: 2, amount: 2000 },
+        { label: '4-month payment', months: 4, amount: 4000 }
+      ] }
+    ]
   },
+  {
+  id: 'quran-tajweed',
+  eyebrow: 'Qur’an Foundation',
+  title: 'Qur’an Reading & Tajweed',
+  short: 'Learn to read the Holy Qur’an correctly with Tajweed, clear pronunciation and proper Makhraj.',
+  price: '₹600 / month',
+  duration: 'As per course curriculum',
+  level: 'Beginner',
+  age: 'All ages',
+  icon: 'ق',
+  outcomes: ['Read the Holy Qur’an correctly (Nazirah)', 'Understand the basics of Qur’anic Arabic', 'Learn the essential rules of Tajweed', 'Pronounce words accurately with correct Makhraj', 'Memorise selected Surahs'],
+  modules: ['Nazirah Qur’an', 'Basic Qur’anic Arabic', 'Tajweed rules', 'Pronunciation and Makhraj', 'Memorisation of selected Surahs'],
+  levels: [
+    { name: 'Beginner', duration: 'Monthly', plans: [
+      { label: 'Monthly fee', months: 1, amount: 600 }
+    ] }
+  ]
+  },
+
+
+
   {
     id: 'python-ai-tools',
     eyebrow: 'Future-ready Digital Skills',
     title: 'Python + AI Tools',
     short: 'Learn coding fundamentals, problem solving and responsible ways to use modern AI tools.',
-    price: 'From £25/month',
+    price: 'Fee on request',
     duration: '12 weeks',
     level: 'No coding required',
     age: 'Ages 10+',
@@ -76,7 +117,7 @@ const navItems = [
 const faqs = [
   ['Who can join Ruyah courses?', 'Our current courses are designed for learners aged 6 and above. The suitable starting level depends on the chosen course, and our team can help you select the right option.'],
   ['Can I request a demo class?', 'Yes. Select your preferred course on the enrollment form and choose the demo-class option. Our team will share available timings through WhatsApp.'],
-  ['How much do the courses cost?', 'Courses currently start from £25 per month. The final fee can vary by course, learning format and schedule, and will be confirmed before enrollment.'],
+  ['How much do the courses cost?', 'Spoken English starts from ₹1,000 for 2 months, and Quran Reading & Tajweed is ₹600 per month. Fees for our other courses are confirmed by the Ruyah team before enrollment.'],
   ['Are classes live or self-paced?', 'Self-paced learning and live online session options are available. You can choose your preference in the participant form or ask our team for guidance.'],
   ['Will participants receive a certificate?', 'A certificate is included after the participant completes the required lessons, activities and course expectations.'],
   ['How does enrollment work?', 'Choose a course, complete the participant form, and continue to WhatsApp. Your information is prepared as a message so the Ruyah team can confirm the next steps.']
@@ -262,6 +303,7 @@ function CourseCard({ course }) {
   </article>
 }
 
+
 function CoursesPage() {
   return <main className="courses-page">
     <section className="courses-page-hero pattern-dark">
@@ -284,6 +326,56 @@ function CoursesPage() {
   </main>
 }
 
+function PaymentOptions({ course }) {
+  const [levelIndex, setLevelIndex] = useState(0)
+  const [plan, setPlan] = useState(null)
+  const [copied, setCopied] = useState('')
+  if (!course.levels) return null
+  const level = course.levels[levelIndex]
+  const amountText = plan ? `₹${plan.amount.toLocaleString('en-IN')}` : ''
+  const note = plan ? `${course.title} ${level.name} - ${plan.label}` : ''
+  const upiLink = plan ? `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${plan.amount}&cu=INR&tn=${encodeURIComponent(note)}` : ''
+  const copyText = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      setTimeout(() => setCopied(''), 2000)
+    } catch { setCopied('') }
+  }
+
+  return <section className="section payment-section">
+    <span className="pill">Fees &amp; Payment</span>
+    <h2>Choose your payment option</h2>
+    {course.levels.length > 1 && <div className="level-tabs">
+      {course.levels.map((l, i) => <button key={l.name} type="button" className={i === levelIndex ? 'active' : ''} onClick={() => { setLevelIndex(i); setPlan(null) }}>{l.name} · {l.duration}</button>)}
+    </div>}
+    {level.requires && <p className="payment-note">Students must complete the {level.requires} level before enrolling in {level.name}.</p>}
+    <div className="plan-buttons">
+      {level.plans.map(p => <button key={p.label} type="button" className={plan === p ? 'active' : ''} onClick={() => setPlan(p)}>{p.label} — ₹{p.amount.toLocaleString('en-IN')}</button>)}
+    </div>
+    {plan && (UPI_ID
+      ? <div className="qr-box">
+          <QRCodeSVG value={upiLink} size={220} />
+          <p>Scan with any UPI app to pay <b>{amountText}</b></p>
+          <div className="pay-details">
+            <p>UPI ID: <b>{UPI_ID}</b> <button type="button" className="copy-btn" onClick={() => copyText('upi', UPI_ID)}>{copied === 'upi' ? 'Copied!' : 'Copy'}</button></p>
+            {BANK.account && <div className="bank-details">
+              <h4>Or pay by bank transfer</h4>
+              <p>Account name: <b>{BANK.holder}</b></p>
+              <p>Bank: <b>{BANK.bankName}</b></p>
+              <p>Account number: <b>{BANK.account}</b> <button type="button" className="copy-btn" onClick={() => copyText('acc', BANK.account)}>{copied === 'acc' ? 'Copied!' : 'Copy'}</button></p>
+              <p>IFSC: <b>{BANK.ifsc}</b> <button type="button" className="copy-btn" onClick={() => copyText('ifsc', BANK.ifsc)}>{copied === 'ifsc' ? 'Copied!' : 'Copy'}</button></p>
+              <p>Amount to pay: <b>{amountText}</b></p>
+            </div>}
+          </div>
+          <p className="payment-note">After paying, send your transaction ID to the institute on WhatsApp so your payment can be confirmed.</p>
+          <a className="button dark" href={whatsappUrl(`Assalamu alaikum, I have paid ${amountText} for ${note}. Transaction ID: `)} target="_blank" rel="noreferrer">Send payment confirmation</a>
+        </div>
+      : <p className="payment-note">Online payment is not set up yet. Please contact the institute on WhatsApp.</p>)}
+  </section>
+}
+
+
 function CoursePage({ course }) {
   if (!course) return <NotFound />
   return <main>
@@ -302,6 +394,7 @@ function CoursePage({ course }) {
       <article><span className="pill">What You Will Learn</span><h2>Clear, practical outcomes</h2><ul>{course.outcomes.map(x => <li key={x}>✦ {x}</li>)}</ul></article>
       <article className="module-card"><span className="pill light">Course Plan</span><ol>{course.modules.map((x, i) => <li key={x}><b>{String(i + 1).padStart(2, '0')}</b><span>{x}</span></li>)}</ol></article>
     </section>
+    <PaymentOptions course={course} />
     <section className="section detail-cta"><h2>Ready to begin?</h2><p>Complete the participant form and continue the conversation with our team on WhatsApp.</p><button className="button dark" onClick={() => go(`/enroll?course=${course.id}`)}>Enroll now</button></section>
   </main>
 }
