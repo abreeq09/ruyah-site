@@ -51,26 +51,43 @@ const courses = [
     outcomes: ['Read and pronounce Arabic confidently', 'Use practical everyday vocabulary', 'Understand essential grammar patterns', 'Build a foundation for Quranic Arabic'],
     modules: ['Letters, sounds and pronunciation', 'Everyday words and expressions', 'Sentence building', 'Reading and guided conversation']
   },
-  {
-    id: 'spoken-english',
-    eyebrow: 'Confidence Through Conversation',
+    {
+    id: 'spoken-english-beginner',
+    eyebrow: 'Beginner Level',
     title: 'Spoken English',
-    short: 'Develop natural conversation, pronunciation and practical English for study and work.',
-    price: 'From ₹1,000 / 2 months',
-    duration: '8 months (4 Beginner + 4 Advanced)',
-    level: 'Beginner & Advanced',
+    levelLabel: 'Beginner',
+    short: 'Start from the basics with clear pronunciation, everyday vocabulary and confident conversation.',
+    price: '₹1,000 / 2 months · ₹2,000 Total',
+    duration: '4 months',
+    level: 'Beginner',
     age: 'Ages 8+',
     icon: 'Aa',
-    outcomes: ['Speak more clearly and confidently', 'Improve vocabulary and pronunciation', 'Practise real-life conversations', 'Strengthen listening and presentation skills'],
-    modules: ['Confidence and introductions', 'Everyday conversations', 'Pronunciation clinic', 'Presentations and interviews'],
+    outcomes: ['Speak more clearly and confidently', 'Improve vocabulary and pronunciation', 'Practise real-life conversations'],
+    modules: ['Confidence and introductions', 'Everyday conversations', 'Pronunciation clinic'],
     levels: [
       { name: 'Beginner', duration: '4 months', plans: [
         { label: '2-month payment', months: 2, amount: 1000 },
-        { label: '4-month payment', months: 4, amount: 2000 }
-      ] },
+        { label: '4-month payment (full fee)', months: 4, amount: 2000 }
+      ] }
+    ]
+  },
+  {
+    id: 'spoken-english-advanced',
+    eyebrow: 'Advanced Level',
+    title: 'Spoken English',
+    levelLabel: 'Advanced',
+    short: 'Take your English further with fluent conversation, presentations and interview skills.',
+    price: '₹1,000/month · ₹4,000 Total',
+    duration: '4 months',
+    level: 'Advanced',
+    age: 'Ages 8+',
+    icon: 'Aa',
+    outcomes: ['Speak fluently and naturally', 'Strengthen listening and presentation skills', 'Prepare for interviews and professional settings'],
+    modules: ['Fluent conversation', 'Presentations', 'Interviews and professional English'],
+    levels: [
       { name: 'Advanced', duration: '4 months', requires: 'Beginner', plans: [
         { label: '2-month payment', months: 2, amount: 2000 },
-        { label: '4-month payment', months: 4, amount: 4000 }
+        { label: 'Total fee (4 months)', months: 4, amount: 4000 }
       ] }
     ]
   },
@@ -126,6 +143,10 @@ const faqs = [
 function whatsappUrl(message) {
   const base = WHATSAPP_NUMBER ? `https://wa.me/${WHATSAPP_NUMBER}` : 'https://wa.me/'
   return `${base}?text=${encodeURIComponent(message)}`
+}
+
+function courseName(course) {
+  return course.levelLabel ? `${course.title} – ${course.levelLabel}` : course.title
 }
 
 function go(path) {
@@ -402,14 +423,22 @@ function CoursePage({ course }) {
 function EnrollmentPage() {
   const initialId = new URLSearchParams(location.search).get('course') || courses[0].id
   const [sent, setSent] = useState(false)
-  const [data, setData] = useState({ participant: '', age: '', guardian: '', email: '', phone: '', course: initialId, mode: 'Self-paced', demo: 'Yes, I would like a demo class', note: '' })
+  const [data, setData] = useState({ participant: '', age: '', guardian: '', email: '', phone: '', course: initialId,plan:'', mode: 'Self-paced', demo: 'Yes, I would like a demo class', note: '' })
   const selected = courses.find(x => x.id === data.course) || courses[0]
+    const level = selected.levels ? selected.levels[0] : null
+  const planOptions = level ? level.plans : []
+  const chosenPlan = planOptions.find(p => p.label === data.plan) || planOptions[0] || null
+  const totalPlan = planOptions.length > 1 ? planOptions[planOptions.length - 1] : null
 
   function update(e) { setData({ ...data, [e.target.name]: e.target.value }) }
-  function submit(e) {
+    function submit(e) {
     e.preventDefault()
     setSent(true)
-    const message = `Assalamu alaikum, I would like to enrol in ${selected.title}.\n\nCourse fee: ${selected.price}\nParticipant: ${data.participant}\nAge: ${data.age}\nGuardian: ${data.guardian || 'Not applicable'}\nEmail: ${data.email}\nPhone: ${data.phone}\nLearning mode: ${data.mode}\nDemo class: ${data.demo}\nNotes: ${data.note || 'None'}`
+    const money = n => `₹${n.toLocaleString('en-IN')}`
+    const feeLine = chosenPlan ? `Fee option: ${chosenPlan.label} - ${money(chosenPlan.amount)}` : `Course fee: ${selected.price}`
+    const totalLine = totalPlan ? `\nTotal course fee: ${money(totalPlan.amount)}` : ''
+    const durationLine = level ? `\nCourse duration: ${level.duration}` : ''
+    const message = `Assalamu alaikum, I would like to enrol in ${courseName(selected)}.\n\n${feeLine}${totalLine}${durationLine}\nParticipant: ${data.participant}\nAge: ${data.age}\nGuardian: ${data.guardian || 'Not applicable'}\nEmail: ${data.email}\nPhone: ${data.phone}\nLearning mode: ${data.mode}\nDemo class: ${data.demo}\nNotes: ${data.note || 'None'}`
     window.open(whatsappUrl(message), '_blank', 'noopener,noreferrer')
   }
 
@@ -418,18 +447,27 @@ function EnrollmentPage() {
       <button className="back-home" type="button" onClick={() => go('/')} aria-label="Back to homepage">← Back to homepage</button>
       <span className="pill light">Participant Form</span><h1>Begin your Ruyah journey</h1>
       <p>Tell us about the learner, request a demo class, and review the course fee. After submission, WhatsApp will open with a ready-to-send enrollment message.</p>
-      <div className="selected-course"><Ornament>{selected.icon}</Ornament><div><small>Selected Course</small><strong>{selected.title}</strong><span>{selected.duration} · {selected.age}</span><b>{selected.price}</b></div></div>
+      <div className="selected-course"><Ornament>{selected.icon}</Ornament><div><small>Selected Course</small><strong>{courseName(selected)}</strong><span>{selected.duration} · {selected.age}</span><b>{selected.price}</b></div></div>
     </section>
     <section className="form-wrap">
       <form onSubmit={submit}>
         <div className="form-heading"><span>Enrollment Details</span><p>Fields marked * are required.</p></div>
-        <label>Course *<select name="course" value={data.course} onChange={update}>{courses.map(c => <option value={c.id} key={c.id}>{c.title}</option>)}</select></label>
+        <label>Course *<select name="course" value={data.course} onChange={update}>{courses.map(c => <option value={c.id} key={c.id}>{courseName(c)}</option>)}</select></label>
         <div className="two-col"><label>Participant Name *<input required name="participant" value={data.participant} onChange={update} placeholder="Full name" /></label><label>Participant Age *<input required min="5" max="99" type="number" name="age" value={data.age} onChange={update} placeholder="Age" /></label></div>
         <label>Parent or Guardian Name<input name="guardian" value={data.guardian} onChange={update} placeholder="For participants under 18" /></label>
         <div className="two-col"><label>Email Address *<input required type="email" name="email" value={data.email} onChange={update} placeholder="name@example.com" /></label><label>WhatsApp Number *<input required name="phone" value={data.phone} onChange={update} placeholder="Country code + number" /></label></div>
         <label>Preferred Learning Mode<select name="mode" value={data.mode} onChange={update}><option>Self-paced</option><option>Live online sessions</option><option>Not sure — please guide me</option></select></label>
         <label>Demo Class Preference<select name="demo" value={data.demo} onChange={update}><option>Yes, I would like a demo class</option><option>Please share available demo timings</option><option>No demo class required</option></select></label>
-        <div className="fee-notice"><span>Course Fee</span><strong>{selected.price}</strong><p>The Ruyah team will confirm the final schedule, payment plan and demo-class availability on WhatsApp.</p></div>
+                {planOptions.length > 0 && <label>Fee Option<select name="plan" value={chosenPlan.label} onChange={update}>{planOptions.map(p => <option key={p.label} value={p.label}>{p.label} — ₹{p.amount.toLocaleString('en-IN')}</option>)}</select></label>}
+        <div className="fee-notice"><span>Course Fee</span><strong>{chosenPlan ? `₹${chosenPlan.amount.toLocaleString('en-IN')}` : selected.price}</strong>
+          {level && <div className="fee-breakdown">
+            {totalPlan && <p>Total course fee: <b>₹{totalPlan.amount.toLocaleString('en-IN')}</b></p>}
+            <p>Course duration: <b>{level.duration}</b></p>
+            {level.requires && <p>The {level.requires} level must be completed before joining {level.name}.</p>}
+          </div>}
+          <p>The Ruyah team will confirm the final schedule, payment plan and demo-class availability on WhatsApp.</p></div>
+        
+        
         <label>Anything We Should Know?<textarea name="note" value={data.note} onChange={update} placeholder="Goals, current level, preferred schedule or questions" /></label>
         <button className="button dark submit" type="submit">Continue enrollment on WhatsApp</button>
         {sent && <p className="success">Your enrollment message is ready in WhatsApp.</p>}
