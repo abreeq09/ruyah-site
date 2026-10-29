@@ -67,3 +67,11 @@ footer{background:#0e3036;color:var(--cream);padding:65px max(6vw,28px) 25px;dis
 .copy-btn { margin-left: 8px; padding: 4px 12px; border-radius: 999px; border: 1px solid #153f46; background: #fff; color: #153f46; cursor: pointer; font-size: 0.85rem; }
 .fee-breakdown { grid-column: 1 / -1; margin: 6px 0; }
 .fee-breakdown p { margin: 4px 0; }
+.form-wrap fieldset.choice-group { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; display: block; }
+.form-wrap .choice-group legend { padding: 0; margin-bottom: 10px; font-weight: 700; }
+.form-wrap .choice-heading { margin: 14px 0 6px; font-weight: 700; }
+.form-wrap label.choice { display: flex !important; flex-direction: row; align-items: center; gap: 10px; margin: 0 0 8px; padding: 0; background: none; border: 0; border-radius: 0; font-weight: 500; cursor: pointer; }
+.form-wrap label.choice input[type="radio"] { width: 18px !important; height: 18px !important; min-width: 18px; padding: 0 !important; margin: 0; flex: none; accent-color: #153f46; box-shadow: none; }
+.form-wrap label.choice span { flex: 1; }
+.enroll-qr { display: block; text-align: center; margin: 0 0 20px; }
+.pay-amount { margin: 0 0 12px; font-size: 1.6rem; }

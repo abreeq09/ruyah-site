@@ -420,25 +420,76 @@ function CoursePage({ course }) {
   </main>
 }
 
+const demoOptions = ['Yes, I would like a demo class', 'Please share available demo timings', 'No demo class required']
+
+function paymentChoices(course) {
+  const plans = course.levels ? course.levels[0].plans : []
+  if (plans.length > 1) {
+    const part = plans[0].amount
+    const full = plans[plans.length - 1].amount
+    return [
+      { label: 'Pay 1st Installment', amount: part },
+      { label: 'Pay 2nd Installment', amount: part },
+      { label: 'Pay Full Fees', amount: full }
+    ]
+  }
+  if (plans.length === 1) return [{ label: 'Pay Monthly Fee', amount: plans[0].amount }]
+  return []
+}
+
+function PaymentQR({ amount, note }) {
+  const [copied, setCopied] = useState('')
+  const amountText = `₹${amount.toLocaleString('en-IN')}`
+  const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`
+  const copyText = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      setTimeout(() => setCopied(''), 2000)
+    } catch { setCopied('') }
+  }
+  if (!UPI_ID) return <p className="payment-note">Online payment is not set up yet. Continue on WhatsApp and the team will share payment details.</p>
+  return <div className="qr-box enroll-qr">
+    <h3 className="pay-amount">Pay {amountText}</h3>
+    <QRCodeSVG value={upiLink} size={200} />
+    <p>Scan with any UPI app</p>
+    <div className="pay-details">
+      <p>UPI ID: <b>{UPI_ID}</b> <button type="button" className="copy-btn" onClick={() => copyText('upi', UPI_ID)}>{copied === 'upi' ? 'Copied!' : 'Copy'}</button></p>
+      {BANK.account && <div className="bank-details">
+        <h4>Or pay by bank transfer</h4>
+        <p>Account name: <b>{BANK.holder}</b></p>
+        <p>Bank: <b>{BANK.bankName}</b></p>
+        <p>Account number: <b>{BANK.account}</b> <button type="button" className="copy-btn" onClick={() => copyText('acc', BANK.account)}>{copied === 'acc' ? 'Copied!' : 'Copy'}</button></p>
+        <p>IFSC: <b>{BANK.ifsc}</b> <button type="button" className="copy-btn" onClick={() => copyText('ifsc', BANK.ifsc)}>{copied === 'ifsc' ? 'Copied!' : 'Copy'}</button></p>
+        <p>Amount to pay: <b>{amountText}</b></p>
+      </div>}
+    </div>
+    <p className="payment-note">After paying, continue enrollment on WhatsApp and send your transaction ID.</p>
+  </div>
+}
+
 function EnrollmentPage() {
   const initialId = new URLSearchParams(location.search).get('course') || courses[0].id
   const [sent, setSent] = useState(false)
-  const [data, setData] = useState({ participant: '', age: '', guardian: '', email: '', phone: '', course: initialId,plan:'', mode: 'Self-paced', demo: 'Yes, I would like a demo class', note: '' })
+  const [data, setData] = useState({ participant: '', age: '', guardian: '', email: '', phone: '', course: initialId, mode: 'Self-paced', demo: demoOptions[0], note: '' })
   const selected = courses.find(x => x.id === data.course) || courses[0]
-    const level = selected.levels ? selected.levels[0] : null
-  const planOptions = level ? level.plans : []
-  const chosenPlan = planOptions.find(p => p.label === data.plan) || planOptions[0] || null
-  const totalPlan = planOptions.length > 1 ? planOptions[planOptions.length - 1] : null
+  const level = selected.levels ? selected.levels[0] : null
+  const totalPlan = level && level.plans.length > 1 ? level.plans[level.plans.length - 1] : null
+  const payChoices = paymentChoices(selected)
+  const payChoice = payChoices.find(p => p.label === data.demo) || null
 
-  function update(e) { setData({ ...data, [e.target.name]: e.target.value }) }
-    function submit(e) {
+  function update(e) {
+    const { name, value } = e.target
+    setData(prev => name === 'course' ? { ...prev, course: value, demo: demoOptions[0] } : { ...prev, [name]: value })
+  }
+  function submit(e) {
     e.preventDefault()
     setSent(true)
     const money = n => `₹${n.toLocaleString('en-IN')}`
-    const feeLine = chosenPlan ? `Fee option: ${chosenPlan.label} - ${money(chosenPlan.amount)}` : `Course fee: ${selected.price}`
     const totalLine = totalPlan ? `\nTotal course fee: ${money(totalPlan.amount)}` : ''
     const durationLine = level ? `\nCourse duration: ${level.duration}` : ''
-    const message = `Assalamu alaikum, I would like to enrol in ${courseName(selected)}.\n\n${feeLine}${totalLine}${durationLine}\nParticipant: ${data.participant}\nAge: ${data.age}\nGuardian: ${data.guardian || 'Not applicable'}\nEmail: ${data.email}\nPhone: ${data.phone}\nLearning mode: ${data.mode}\nDemo class: ${data.demo}\nNotes: ${data.note || 'None'}`
+    const choiceLine = payChoice ? `Payment: ${payChoice.label} - ${money(payChoice.amount)}` : `Demo class: ${data.demo}`
+    const message = `Assalamu alaikum, I would like to enrol in ${courseName(selected)}.\n\nCourse fee: ${selected.price}${totalLine}${durationLine}\nParticipant: ${data.participant}\nAge: ${data.age}\nGuardian: ${data.guardian || 'Not applicable'}\nEmail: ${data.email}\nPhone: ${data.phone}\nLearning mode: ${data.mode}\n${choiceLine}\nNotes: ${data.note || 'None'}`
     window.open(whatsappUrl(message), '_blank', 'noopener,noreferrer')
   }
 
@@ -457,17 +508,20 @@ function EnrollmentPage() {
         <label>Parent or Guardian Name<input name="guardian" value={data.guardian} onChange={update} placeholder="For participants under 18" /></label>
         <div className="two-col"><label>Email Address *<input required type="email" name="email" value={data.email} onChange={update} placeholder="name@example.com" /></label><label>WhatsApp Number *<input required name="phone" value={data.phone} onChange={update} placeholder="Country code + number" /></label></div>
         <label>Preferred Learning Mode<select name="mode" value={data.mode} onChange={update}><option>Self-paced</option><option>Live online sessions</option><option>Not sure — please guide me</option></select></label>
-        <label>Demo Class Preference<select name="demo" value={data.demo} onChange={update}><option>Yes, I would like a demo class</option><option>Please share available demo timings</option><option>No demo class required</option></select></label>
-                {planOptions.length > 0 && <label>Fee Option<select name="plan" value={chosenPlan.label} onChange={update}>{planOptions.map(p => <option key={p.label} value={p.label}>{p.label} — ₹{p.amount.toLocaleString('en-IN')}</option>)}</select></label>}
-        <div className="fee-notice"><span>Course Fee</span><strong>{chosenPlan ? `₹${chosenPlan.amount.toLocaleString('en-IN')}` : selected.price}</strong>
+        <fieldset className="choice-group">
+          <legend>Demo Class Preference{payChoices.length > 0 ? ' & Payment' : ''}</legend>
+          {demoOptions.map(opt => <label className="choice" key={opt}><input type="radio" name="demo" value={opt} checked={data.demo === opt} onChange={update} /><span>{opt}</span></label>)}
+          {payChoices.length > 0 && <p className="choice-heading">Payment</p>}
+          {payChoices.map(p => <label className="choice" key={p.label}><input type="radio" name="demo" value={p.label} checked={data.demo === p.label} onChange={update} /><span>{p.label} — ₹{p.amount.toLocaleString('en-IN')}</span></label>)}
+        </fieldset>
+        {payChoice && <PaymentQR amount={payChoice.amount} note={`${courseName(selected)} - ${payChoice.label}`} />}
+        <div className="fee-notice"><span>Course Fee</span><strong>{selected.price}</strong>
           {level && <div className="fee-breakdown">
             {totalPlan && <p>Total course fee: <b>₹{totalPlan.amount.toLocaleString('en-IN')}</b></p>}
             <p>Course duration: <b>{level.duration}</b></p>
             {level.requires && <p>The {level.requires} level must be completed before joining {level.name}.</p>}
           </div>}
           <p>The Ruyah team will confirm the final schedule, payment plan and demo-class availability on WhatsApp.</p></div>
-        
-        
         <label>Anything We Should Know?<textarea name="note" value={data.note} onChange={update} placeholder="Goals, current level, preferred schedule or questions" /></label>
         <button className="button dark submit" type="submit">Continue enrollment on WhatsApp</button>
         {sent && <p className="success">Your enrollment message is ready in WhatsApp.</p>}
